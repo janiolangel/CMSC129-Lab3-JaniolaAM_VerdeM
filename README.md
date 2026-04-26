@@ -1,226 +1,246 @@
+# ✅ CMSC 129 Lab 3 — AI-Integrated Task Manager
 
----
+**Built on top of Lab 2 (Laravel MVC CRUD Application)**
 
-# ✦ heyToday! — Task Management App
-
-### CMSC 129 Laboratory Assignment 2
-
-> *Stay focused, get it done.*
-
-A full-stack task management web application built using the **MVC (Model-View-Controller)** architecture with the **Laravel** framework and **PostgreSQL** database.
+**Authors:** Janiola, A.M. | Verde, M.
 
 ---
 
 ## 📋 Overview
 
-**heyToday!** is a productivity-focused task manager that helps users organize tasks into multiple lists, monitor progress, and manage workflows efficiently.
+This is a Laravel-based task management web application enhanced with AI capabilities through a built-in chatbot assistant. Users can manage tasks and task lists through a standard UI, and also interact with the app using natural language via the integrated AI chat widget.
 
-It features a **clean dark-themed dashboard**, real-time task tracking, priority levels, due dates, and **soft-delete (archive)** functionality.
+The AI assistant can answer questions about your tasks, perform full CRUD operations through chat commands, and maintain context across a conversation session.
+
+---
+
+## 🤖 AI Features
+
+### Minimum: AI Chatbot for Inquiries
+
+The chatbot can answer natural language questions about your tasks and task lists using live data from the database. It supports at least the following types of inquiries:
+
+- "What tasks do I have?"
+- "Show me all high-priority tasks"
+- "How many completed tasks do I have?"
+- "What's my oldest pending task?"
+- "List tasks in the 'Work' list"
+
+### Expanded: AI Assistant for CRUD Operations
+
+The assistant goes beyond inquiry — it can perform full CRUD operations through natural language commands. Destructive operations (archive, force delete) require explicit confirmation before executing.
+
+**Supported actions:**
+
+| Action | Example Command |
+|---|---|
+| `create_task` | "Create a new task: Finish Lab 3 with high priority" |
+| `update_task` | "Mark task #5 as completed" |
+| `delete_task` (archive) | "Delete the task called Submit Report" |
+| `confirm_archive` | "confirm archive" |
+| `restore_task` | "Restore the archived task Submit Report" |
+| `force_delete_task` | "Permanently delete task #3" |
+| `confirm_force_delete` | "confirm force delete" |
+| `query_tasks` | "Show me all pending tasks in the School list" |
+| `list_tasks` | "List all my tasks" |
+| `count_tasks` | "How many high-priority tasks do I have?" |
+| `oldest_task` | "What's my oldest task?" |
+
+### Intelligent Context Awareness
+
+The assistant maintains conversation history (last 10 messages) and supports follow-up questions referencing previous context:
+
+```
+User: "What tasks do I have?"
+AI:   "You have 5 tasks: [list]"
+
+User: "Which ones are high priority?"
+AI:   [Filters to high-priority tasks]
+
+User: "Which ones are due this week?"
+AI:   [Further filters by due date]
+```
+
+---
+
+## 🧠 AI Service & Model Used
+
+| Provider | Model | Role |
+|---|---|---|
+| **Google Gemini** | `gemini-2.5-flash` | Primary AI |
+| **Groq** | `llama-3.3-70b-versatile` | Fallback AI |
+
+The app uses a **primary-with-fallback** strategy: Gemini is tried first. If it fails (e.g., rate limit or timeout), it automatically switches to Groq. This ensures availability and avoids running out of free credits on a single provider.
 
 ---
 
 ## 🛠️ Tech Stack
 
-| Layer           | Technology              |
-| --------------- | ----------------------- |
-| Framework       | Laravel 13 (PHP 8.3)    |
-| Database        | PostgreSQL              |
-| ORM             | Eloquent                |
-| Views           | Blade Templating Engine |
-| Styling         | Tailwind CSS (CDN)      |
-| Build Tool      | Vite + Node.js          |
-| Version Control | Git + GitHub            |
+- **Framework:** Laravel 13 (PHP 8.3+)
+- **Frontend:** Blade templates, Tailwind CSS v4, Vite
+- **Database:** SQLite (default)
+- **AI APIs:** Google Gemini API, Groq API
+- **AI Architecture:** `AIService` → `PromptService` → `FunctionCallService`
 
 ---
 
-## 🏗️ Project Structure (MVC)
-
-```
-lab2/
-├── app/
-│   ├── Http/Controllers/
-│   │   ├── TaskController.php
-│   │   └── TaskListController.php
-│   └── Models/
-│       ├── Task.php
-│       └── TaskList.php
-├── database/migrations/
-│   ├── ..._create_task_lists_table.php
-│   └── ..._create_tasks_table.php
-├── resources/views/
-│   ├── layouts/app.blade.php
-│   └── tasks/
-│       ├── index.blade.php
-│       └── _card.blade.php
-└── routes/web.php
-```
-
----
-
-## 🔁 MVC Architecture Explained
-
-* **Models** (`Task`, `TaskList`)
-  Handle database structure, relationships, and data operations using Eloquent ORM.
-  `Task` implements **SoftDeletes** for archiving.
-
-* **Views** (Blade Templates)
-  Responsible for UI rendering.
-  Uses a master layout (`layouts/app.blade.php`) with reusable sections.
-
-* **Controllers** (`TaskController`, `TaskListController`)
-  Process HTTP requests, interact with models, and return views.
-  Maintains separation of concerns (no business logic in views).
-
----
-
-## 🗄️ Database Schema
-
-### `task_lists`
-
-| Column     | Type      | Description |
-| ---------- | --------- | ----------- |
-| id         | bigint    | Primary key |
-| name       | string    | List name   |
-| created_at | timestamp | Auto        |
-| updated_at | timestamp | Auto        |
-
-### `tasks`
-
-| Column      | Type            | Description                                     |
-| ----------- | --------------- | ----------------------------------------------- |
-| id          | bigint          | Primary key                                     |
-| list_id     | foreign key     | References `task_lists`                         |
-| task        | string          | Task name                                       |
-| description | text (nullable) | Task details                                    |
-| priority    | enum            | Low / Medium / High                             |
-| status      | tinyint         | 0 = Not Started, 1 = In Progress, 2 = Completed |
-| due_date    | date (nullable) | Due date                                        |
-| deleted_at  | timestamp       | Soft delete (archive)                           |
-| created_at  | timestamp       | Auto                                            |
-| updated_at  | timestamp       | Auto                                            |
-
----
-
-## 🚀 Installation & Setup
+## ⚙️ Setup Instructions
 
 ### Prerequisites
 
-* PHP 8.5+
-* Composer
-* Node.js & npm
-* PostgreSQL
-* Git
+- PHP 8.3+
+- Composer
+- Node.js (v16+) & npm
 
-### Steps
-
-#### 1. Clone the Repository
+### 1. Clone the repository
 
 ```bash
-git clone https://github.com/hungrychef-bytescode/CMSC129-Lab2-JaniolaAM_VerdeM.git
-cd CMSC129-Lab2-JaniolaAM_VerdeM/lab2
+git clone <your-repo-url>
+cd CMSC129-Lab3-JaniolaAM_VerdeM
 ```
 
-#### 2. Install Dependencies
+### 2. Install dependencies
 
 ```bash
 composer install
 npm install
 ```
 
-#### 3. Environment Setup
+### 3. Configure environment variables
 
 ```bash
 cp .env.example .env
 php artisan key:generate
 ```
 
-#### 4. Configure Database
+Then open `.env` and fill in your API keys (see [Environment Variables](#-environment-variables) below).
 
-Update `.env` with your PostgreSQL credentials:
-
-```env
-DB_CONNECTION=pgsql
-DB_HOST=127.0.0.1
-DB_PORT=5432
-DB_DATABASE=your_database_name
-DB_USERNAME=postgres
-DB_PASSWORD=your_password
-```
-
-#### 5. Run Migrations
+### 4. Set up the database and seed dummy data
 
 ```bash
 php artisan migrate
+php artisan db:seed
 ```
 
-#### 6. Start Development Servers
+This seeds **10–20 realistic sample tasks** across multiple task lists (e.g., Work, School, Personal) with varying priorities, statuses, and due dates.
+
+### 5. Build frontend assets
 
 ```bash
-# Terminal 1
+npm run build
+```
+
+### 6. Start the development server
+
+```bash
+composer run dev
+```
+
+Or run just the Laravel server:
+
+```bash
 php artisan serve
-
-# Terminal 2
-npm run dev
 ```
 
-#### 7. Access the App
+Visit `http://localhost:8000` in your browser.
+
+---
+
+## 🔑 Environment Variables
+
+Copy `.env.example` to `.env` and fill in the following:
+
+```env
+# Google Gemini API (Primary AI)
+# Get your key at: https://makersuite.google.com/app/apikey
+GEMINI_API_KEY=your_gemini_api_key_here
+
+# Groq API (Fallback AI)
+# Get your key at: https://console.groq.com/
+GROQ_API_KEY=your_groq_api_key_here
+GROQ_BASE_URL=https://api.groq.com/openai/v1
+```
+
+> ⚠️ **Never commit your actual `.env` file to GitHub.** It is already in `.gitignore`. Only commit `.env.example`.
+
+### Getting API Keys
+
+- **Google Gemini (Free tier — recommended):** [Google AI Studio](https://makersuite.google.com/app/apikey) — 60 req/min on free tier
+- **Groq (Free tier — fast):** [Groq Console](https://console.groq.com/) — generous free tier
+
+---
+
+## 💬 Example Queries to Try
+
+Once the app is running, open the chat widget (bottom-right corner) and try:
+
+### Inquiry (Read)
+- "Show me all my tasks"
+- "What tasks are in the Work list?"
+- "List all high-priority tasks"
+- "How many tasks do I have?"
+- "What is my oldest pending task?"
+- "Show completed tasks in School"
+- "Which tasks are due today?"
+
+### CRUD via Chat
+- "Add a task called 'Buy groceries' with low priority in the Personal list"
+- "Create a high-priority task: Finish Lab 3, due tomorrow, in School"
+- "Mark task #2 as done"
+- "Archive the task called Fix the bug"
+- "Restore the archived task Submit Report"
+- "Permanently delete task #4"
+
+### Follow-up / Context
+- "Show me all tasks" → "Which ones are high priority?" → "Now filter by pending only"
+- "How many tasks are in Work?" → "What about completed ones?"
+
+---
+
+## 🔒 Security Notes
+
+- All AI API calls go through the **Laravel backend** (`ChatController` → `AIService`). The frontend never calls AI APIs directly.
+- API keys are stored in `.env` and never exposed to the browser.
+- The AI interacts with the database **only through internal Laravel controllers** (`TaskAPIController`), not via raw SQL or direct DB access.
+
+---
+
+## 📁 Project Structure (AI-related files)
 
 ```
-http://localhost:8000
+app/
+├── Http/
+│   └── Controllers/
+│       ├── ChatController.php        # Handles /chat endpoint
+│       ├── TaskAPIController.php     # Internal API for AI to call
+│       ├── TaskController.php        # Standard CRUD controller
+│       └── TaskListController.php
+├── Services/
+│   ├── AIService.php                 # Gemini + Groq API integration w/ fallback
+│   ├── PromptService.php             # Builds system prompt with live task data
+│   └── FunctionCallService.php       # Parses AI JSON output → executes actions
+├── Models/
+│   ├── Task.php                      # SoftDeletes (archive/restore)
+│   └── TaskList.php
+database/
+└── seeders/
+    ├── TaskListSeeder.php
+    └── TaskSeeder.php
+routes/
+├── web.php                           # Includes POST /chat route
 ```
 
 ---
 
 ## 📸 Screenshots
 
-<img width="1919" height="870" src="https://github.com/user-attachments/assets/42f449f2-bf46-4cfa-ac87-6da25993fc5b" />
-<img width="1919" height="862" src="https://github.com/user-attachments/assets/d8e4ec8f-1d9d-4958-b8d1-a9c0f51ab42f" />
-
----
-
-## ✨ Features
-
-| Feature                                      | Status |
-| -------------------------------------------- | ------ |
-| Create tasks (name, priority, due date)      | ✅      |
-| View tasks (active, completed, archived)     | ✅      |
-| Update tasks                                 | ✅      |
-| Soft delete (archive)                        | ✅      |
-| Restore archived tasks                       | ✅      |
-| Permanent delete                             | ✅      |
-| Validation (store & update)                  | ✅      |
-| Search tasks                                 | ✅      |
-| Filter by status/priority                    | ✅      |
-| Sort tasks (date, priority)                  | ✅      |
-| Task-list relationship (hasMany / belongsTo) | ✅      |
-| Task Lists (create/delete)                   | ✅      |
-| Task progress dashboard                      | ✅      |
-| Pagination (10 per page)                     | ✅      |
-
----
-
-## ⚠️ Notes
-
-* PostgreSQL configuration must be completed before running migrations.
-* README finalized for project documentation and submission.
-
----
-
-## 👥 Contributors
-
-| Name        | Role                                            |
-| ----------- | ----------------------------------------------- |
-| Verde, M    | Backend (Models, Controllers, Database, Routes) |
-| Janiola, AM | Frontend (Blade Views, UI/UX Design)            |
+> *(Add screenshots of the chat widget in action here — both inquiry and CRUD interactions)*
 
 ---
 
 ## 📚 References
 
-* Laravel Documentation
-* Eloquent ORM
-* Blade Templates
-* PostgreSQL Documentation
-
----
-
+- [Google Gemini API Documentation](https://ai.google.dev/docs)
+- [Groq API Documentation](https://console.groq.com/docs)
+- [Laravel Documentation](https://laravel.com/docs)
+- [Prompt Engineering Guide](https://www.promptingguide.ai/)
