@@ -44,6 +44,8 @@ ACTIONS:
 - confirm_force_delete
 - query_tasks
 - list_tasks
+- count_tasks
+- oldest_task
 - unknown
 
 RULES:
@@ -62,6 +64,15 @@ LIST FILTERING RULE:
 - Include it in:
   \"list_id\": <id>
 
+COUNT RULE:
+- If no filters are provided, count ALL tasks
+- If list is mentioned, count tasks in that list
+- If previous filters exist, apply them
+
+CONTEXT RULE:
+- If user asks a follow-up, reuse previous filters
+- Apply new filters on top
+
 FILTER COMBINATION RULE:
 - You may combine:
   list_id, priority, status, archived, due_today
@@ -78,6 +89,41 @@ User: show tasks in Work
   \"data\": {
     \"list_id\": 1
   }
+}
+
+User: how many tasks do I have
+{
+  \"action\": \"count_tasks\",
+  \"data\": {}
+}
+
+User: how many tasks in Work
+{
+  \"action\": \"count_tasks\",
+  \"data\": {
+    \"list_id\": 1
+  }
+}
+
+User: how many completed tasks in School
+{
+  \"action\": \"count_tasks\",
+  \"data\": {
+    \"list_id\": 2,
+    \"status\": 1
+  }
+}
+
+User: how many completed tasks do I have
+{
+  \"action\": \"count_tasks\",
+  \"data\": { \"status\": 1 }
+}
+
+User: what is my oldest pending task
+{
+  \"action\": \"oldest_task\",
+  \"data\": { \"status\": 0 }
 }
 
 User: show archived tasks
