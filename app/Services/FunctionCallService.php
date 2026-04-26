@@ -18,7 +18,10 @@ class FunctionCallService
                 return $this->createTask($data);
 
             case 'update_task':
-                return $this->updateTask($data);
+                return $this->prepareUpdate($data);
+
+            case 'confirm_update':
+                return $this->confirmUpdate();
 
             case 'delete_task':
                 return $this->prepareArchive($data);
@@ -39,7 +42,13 @@ class FunctionCallService
                 return $this->queryTasks($data);
 
             case 'list_tasks':
-                return $this->listTasks();
+                return $this->queryTasks([]);
+
+            case 'count_tasks':
+                return $this->countTasks($data);
+
+            case 'oldest_task':
+                return $this->oldestTask($data);
 
             default:
                 return "I did not understand the request.";
@@ -48,24 +57,28 @@ class FunctionCallService
 
     private function createTask($data)
     {
-        $controller = new TaskAPIController();
-        $request = new Request($data);
-
-        $controller->store($request);
-
-        return "Task created.";
+        (new TaskAPIController())->store(new Request($data));
+        return "Task created.\n" . $this->queryTasks([]);
     }
 
-    private function updateTask($data)
+    private function prepareUpdate($data)
     {
-        if (!isset($data['id'])) return "Task ID required.";
+        session(['pending_update' => $data]);
+        return "Confirm update by typing: confirm update";
+    }
 
-        $controller = new TaskAPIController();
-        $request = new Request($data);
+    private function confirmUpdate()
+    {
+        $data = session('pending_update');
 
-        $controller->update($request, $data['id']);
+        if (!$data || !isset($data['id'])) {
+            return "No pending update.";
+        }
 
-        return "Task updated.";
+        (new TaskAPIController())->update(new Request($data), $data['id']);
+        session()->forget('pending_update');
+
+        return "Task updated.\n" . $this->queryTasks([]);
     }
 
     private function prepareArchive($data)
@@ -80,22 +93,18 @@ class FunctionCallService
 
         if (!$id) return "No pending archive.";
 
-        $controller = new TaskAPIController();
-        $controller->archive($id);
-
+        (new TaskAPIController())->archive($id);
         session()->forget('pending_archive');
 
-        return "Task archived.";
+        return "Task archived.\n" . $this->queryTasks([]);
     }
 
     private function restoreTask($data)
     {
         if (!isset($data['id'])) return "Task ID required.";
 
-        $controller = new TaskAPIController();
-        $controller->restore($data['id']);
-
-        return "Task restored.";
+        (new TaskAPIController())->restore($data['id']);
+        return "Task restored.\n" . $this->queryTasks([]);
     }
 
     private function prepareForceDelete($data)
@@ -110,20 +119,25 @@ class FunctionCallService
 
         if (!$id) return "No pending delete.";
 
-        $controller = new TaskAPIController();
-        $controller->forceDelete($id);
-
+        (new TaskAPIController())->forceDelete($id);
         session()->forget('pending_force_delete');
 
-        return "Task permanently deleted.";
+        return "Task permanently deleted.\n" . $this->queryTasks([]);
     }
 
     private function queryTasks($data)
     {
-        $controller = new TaskAPIController();
-        $request = new Request($data);
+        $lastFilters = session('last_filters', []);
 
-        $response = $controller->index($request);
+        if (empty($data)) {
+            session()->forget('last_filters');
+            $filters = [];
+        } else {
+            $filters = array_merge($lastFilters, $data);
+            session(['last_filters' => $filters]);
+        }
+
+        $response = (new TaskAPIController())->index(new Request($filters));
         $tasks = $response->getData(true);
 
         if (empty($tasks)) return "No tasks found.";
@@ -131,10 +145,7 @@ class FunctionCallService
         $output = "Tasks:\n";
 
         foreach ($tasks as $task) {
-            $state = isset($task['deleted_at']) && $task['deleted_at']
-                ? "Archived"
-                : "Active";
-
+            $state = !empty($task['deleted_at']) ? "Archived" : "Active";
             $status = $task['status'] ? "Done" : "Pending";
 
             $output .= "#{$task['id']} {$task['task']} ({$task['priority']}) - {$status} - {$state}\n";
@@ -143,8 +154,20 @@ class FunctionCallService
         return $output;
     }
 
-    private function listTasks()
+    private function countTasks($data)
     {
-        return $this->queryTasks([]);
+        $tasks = (new TaskAPIController())->index(new Request($data))->getData(true);
+        return "Total tasks: " . count($tasks);
+    }
+
+    private function oldestTask($data)
+    {
+        $tasks = collect((new TaskAPIController())->index(new Request($data))->getData(true));
+
+        if ($tasks->isEmpty()) return "No tasks found.";
+
+        $oldest = $tasks->sortBy('created_at')->first();
+
+        return "Oldest task: #{$oldest['id']} {$oldest['task']}";
     }
 }
