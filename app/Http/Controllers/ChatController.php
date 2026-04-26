@@ -28,7 +28,7 @@ class ChatController extends Controller
 
         if (!$decoded) {
             return response()->json([
-                'reply' => "AI format error",
+                'reply' => "Something went wrong while understanding your request. Try rephrasing it.",
                 'raw' => $response
             ]);
         }

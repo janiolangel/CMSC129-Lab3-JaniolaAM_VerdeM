@@ -27,16 +27,25 @@ class PromptService
         $historyText = json_encode($history);
 
         return "
-You are an AI Task Assistant.
+You are a smart and helpful AI Task Assistant.
 
-You MUST return ONLY valid JSON.
-Do NOT include explanations.
+Your job is to understand the user's request and translate it into a structured JSON action.
+
+Respond ONLY with valid JSON.
+Do not include explanations or extra text.
 Do NOT wrap in markdown.
 Do NOT use ```json.
+
+Think like a human assistant:
+- Understand natural language
+- Handle follow-up questions
+- Use previous context when needed
+- Infer meaning even if the user is not precise
 
 ACTIONS:
 - create_task
 - update_task
+- confirm_update
 - delete_task
 - confirm_archive
 - restore_task
@@ -56,8 +65,8 @@ RULES:
     \"data\": {}
   }
 
-- archived = true means task is deleted
-- status: 0 = pending, 1 = completed
+- archived = true means task is soft deleted (in archive, not permanently removed)
+- status: 0 = not started, 1 = in progress, 2 = completed
 
 LIST FILTERING RULE:
 - If user mentions a list name (e.g., Work, School), find matching list_id
@@ -91,6 +100,19 @@ User: show tasks in Work
   }
 }
 
+User: confirm update
+{
+  \"action\": \"confirm_update\",
+  \"data\": {}
+}
+
+User: restore task 3
+{
+  \"action\": \"restore_task\",
+  \"data\": {
+    \"id\": 3
+  }
+}
 User: how many tasks do I have
 {
   \"action\": \"count_tasks\",

@@ -68,7 +68,7 @@ class AIService
             'Authorization' => 'Bearer ' . env('GROQ_API_KEY'),
             'Content-Type'  => 'application/json',
         ])->post(env('GROQ_BASE_URL') . '/chat/completions', [
-            'model' => 'llama-3.3-70b-versatile',
+            'model' => 'llama-3.1-8b-instant',
             'messages' => [
                 ['role' => 'system', 'content' => 'You are a helpful assistant.'],
                 ['role' => 'user', 'content' => $message]

@@ -51,20 +51,20 @@ class FunctionCallService
                 return $this->oldestTask($data);
 
             default:
-                return "I did not understand the request.";
+                return "I’m not quite sure what you mean. Can you rephrase that?";
         }
     }
 
     private function createTask($data)
     {
         (new TaskAPIController())->store(new Request($data));
-        return "Task created.\n" . $this->queryTasks([]);
+        return "Got it. I’ve added that task.\n" . $this->queryTasks([]);
     }
 
     private function prepareUpdate($data)
     {
         session(['pending_update' => $data]);
-        return "Confirm update by typing: confirm update";
+        return "Do you want me to update this task? Type \"confirm update\" to proceed.";
     }
 
     private function confirmUpdate()
@@ -72,19 +72,19 @@ class FunctionCallService
         $data = session('pending_update');
 
         if (!$data || !isset($data['id'])) {
-            return "No pending update.";
+            return "There’s no update waiting to be confirmed.";
         }
 
         (new TaskAPIController())->update(new Request($data), $data['id']);
         session()->forget('pending_update');
 
-        return "Task updated.\n" . $this->queryTasks([]);
+        return "Alright, I’ve updated the task.\n" . $this->queryTasks([]);
     }
 
     private function prepareArchive($data)
     {
         session(['pending_archive' => $data['id'] ?? null]);
-        return "Confirm archive by typing: confirm archive";
+        return "Do you want me to archive this task? Type \"confirm archive\" to continue.";
     }
 
     private function confirmArchive()
@@ -110,7 +110,7 @@ class FunctionCallService
     private function prepareForceDelete($data)
     {
         session(['pending_force_delete' => $data['id'] ?? null]);
-        return "Confirm permanent delete by typing: confirm delete forever";
+        return "This will permanently delete the task. Type \"confirm delete forever\" if you’re sure you want to proceed.";
     }
 
     private function confirmForceDelete()
@@ -140,15 +140,17 @@ class FunctionCallService
         $response = (new TaskAPIController())->index(new Request($filters));
         $tasks = $response->getData(true);
 
-        if (empty($tasks)) return "No tasks found.";
+        if (empty($tasks)) return "I couldn’t find anything that matches that.";
 
-        $output = "Tasks:\n";
+        $count = count($tasks);
+
+        $output = "I found {$count} task" . ($count > 1 ? "s" : "") . ":\n\n";
 
         foreach ($tasks as $task) {
             $state = !empty($task['deleted_at']) ? "Archived" : "Active";
             $status = $task['status'] ? "Done" : "Pending";
 
-            $output .= "#{$task['id']} {$task['task']} ({$task['priority']}) - {$status} - {$state}\n";
+            $output .= "{$task['task']} ({$task['priority']}) - {$status} - {$state}\n";
         }
 
         return $output;
@@ -168,6 +170,6 @@ class FunctionCallService
 
         $oldest = $tasks->sortBy('created_at')->first();
 
-        return "Oldest task: #{$oldest['id']} {$oldest['task']}";
+        return "Your oldest task is \"{$oldest['task']}\"";
     }
 }
