@@ -155,10 +155,6 @@ Copy `.env.example` to `.env` and fill in the following:
 # Get your key at: https://makersuite.google.com/app/apikey
 GEMINI_API_KEY=your_gemini_api_key_here
 
-# Groq API (Fallback AI)
-# Get your key at: https://console.groq.com/
-GROQ_API_KEY=your_groq_api_key_here
-GROQ_BASE_URL=https://api.groq.com/openai/v1
 ```
 
 > ⚠️ **Never commit your actual `.env` file to GitHub.** It is already in `.gitignore`. Only commit `.env.example`.
